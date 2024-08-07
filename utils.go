@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"time"
 
-	tmrpc "github.com/tendermint/tendermint/rpc/client/http"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmrpc "github.com/cometbft/cometbft/rpc/client/http"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
 )
 
 type ChainStatus struct {

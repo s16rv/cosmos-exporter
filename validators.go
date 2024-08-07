@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/simapp"
+	"github.com/cosmos/cosmos-sdk/types/module/testutil"
 	querytypes "github.com/cosmos/cosmos-sdk/types/query"
 	slashingtypes "github.com/cosmos/cosmos-sdk/x/slashing/types"
 	stakingtypes "github.com/cosmos/cosmos-sdk/x/staking/types"
@@ -19,7 +19,7 @@ import (
 )
 
 func ValidatorsHandler(w http.ResponseWriter, r *http.Request, grpcConn *grpc.ClientConn) {
-	encCfg := simapp.MakeTestEncodingConfig()
+	encCfg := testutil.MakeTestEncodingConfig()
 	interfaceRegistry := encCfg.InterfaceRegistry
 
 	requestStart := time.Now()
