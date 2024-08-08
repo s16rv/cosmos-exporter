@@ -1,5 +1,7 @@
 # This is an example .goreleaser.yml file with some sane defaults.
 # Make sure to check the documentation at http://goreleaser.com
+version: 2
+
 before:
   hooks:
     # You may remove this if you don't use go modules.
@@ -17,12 +19,16 @@ builds:
       - 386
       - amd64
 archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
+  - name_template: >-
+      {{ .ProjectName }}_
+      {{- trimprefix .Version "." }}_
+      {{- if eq .Os "darwin" }}Darwin_
+      {{- else if eq .Os "linux" }}Linux_
+      {{- else if eq .Os "windows" }}Windows_
+      {{- else }}{{ .Os }}_{{end}}
+      {{- if eq .Arch "amd64" }}x86_64
+      {{- else if eq .Arch "386" }}i386
+      {{- else }}{{ .Arch }}{{ end }}
 checksum:
   name_template: 'checksums.txt'
 snapshot:
