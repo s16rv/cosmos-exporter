@@ -2,19 +2,19 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"sync"
 	"time"
 
-	"github.com/cosmos/cosmos-sdk/codec"
-	codectypes "github.com/cosmos/cosmos-sdk/codec/types"
-	govtypes "github.com/cosmos/cosmos-sdk/x/gov/types"
+	"github.com/cosmos/cosmos-sdk/types/query"
+	govv1types "github.com/cosmos/cosmos-sdk/x/gov/types/v1"
 	"github.com/google/uuid"
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"google.golang.org/grpc"
 )
+
+const LIMIT_PROPOSALS = 20
 
 func ProposalsHandler(w http.ResponseWriter, r *http.Request, grpcConn *grpc.ClientConn) {
 	requestStart := time.Now()
@@ -35,7 +35,7 @@ func ProposalsHandler(w http.ResponseWriter, r *http.Request, grpcConn *grpc.Cli
 	registry := prometheus.NewRegistry()
 	registry.MustRegister(proposalsGauge)
 
-	var proposals []govtypes.Proposal
+	var proposals []*govv1types.Proposal
 
 	var wg sync.WaitGroup
 
@@ -45,10 +45,15 @@ func ProposalsHandler(w http.ResponseWriter, r *http.Request, grpcConn *grpc.Cli
 		sublogger.Debug().Msg("Started querying proposals")
 		queryStart := time.Now()
 
-		govClient := govtypes.NewQueryClient(grpcConn)
+		govClient := govv1types.NewQueryClient(grpcConn)
 		proposalsResponse, err := govClient.Proposals(
 			context.Background(),
-			&govtypes.QueryProposalsRequest{},
+			&govv1types.QueryProposalsRequest{
+				Pagination: &query.PageRequest{
+					Limit:   LIMIT_PROPOSALS,
+					Reverse: true,
+				},
+			},
 		)
 		if err != nil {
 			sublogger.Error().Err(err).Msg("Could not get proposals")
@@ -67,25 +72,13 @@ func ProposalsHandler(w http.ResponseWriter, r *http.Request, grpcConn *grpc.Cli
 		Int("proposalsLength", len(proposals)).
 		Msg("Proposals info")
 
-	cdcRegistry := codectypes.NewInterfaceRegistry()
-	cdc := codec.NewProtoCodec(cdcRegistry)
 	for _, proposal := range proposals {
-		var content govtypes.TextProposal
-		err := cdc.UnmarshalBinaryBare(proposal.Content.Value, &content)
-
-		if err != nil {
-			sublogger.Error().
-				Str("proposal_id", fmt.Sprint(proposal.ProposalId)).
-				Err(err).
-				Msg("Could not parse proposal content")
-		}
-
 		proposalsGauge.With(prometheus.Labels{
-			"title":             content.Title,
+			"title":             proposal.Title,
 			"status":            proposal.Status.String(),
 			"voting_start_time": proposal.VotingStartTime.String(),
 			"voting_end_time":   proposal.VotingEndTime.String(),
-		}).Set(float64(proposal.ProposalId))
+		}).Set(float64(proposal.Id))
 	}
 
 	h := promhttp.HandlerFor(registry, promhttp.HandlerOpts{})

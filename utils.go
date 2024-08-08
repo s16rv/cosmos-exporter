@@ -5,8 +5,9 @@ import (
 	"fmt"
 	"time"
 
-	tmrpc "github.com/tendermint/tendermint/rpc/client/http"
-	coretypes "github.com/tendermint/tendermint/rpc/core/types"
+	tmrpc "github.com/cometbft/cometbft/rpc/client/http"
+	coretypes "github.com/cometbft/cometbft/rpc/core/types"
+	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
 type ChainStatus struct {
@@ -64,4 +65,14 @@ func (cs ChainStatus) EstimateBlockTime(totalHeight int64) (time.Time, error) {
 	estimated := latestBlockTime.Add(duration)
 
 	return estimated, nil
+}
+
+func isValAddress(address string) bool {
+	_, err := sdk.ValAddressFromBech32(address)
+	return err == nil
+}
+
+func isConsAddress(address string) bool {
+	_, err := sdk.ConsAddressFromBech32(address)
+	return err == nil
 }
